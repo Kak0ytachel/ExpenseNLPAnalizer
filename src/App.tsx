@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import './App.css';
 
-// --- Types & Constants ---
-type Category = 'Food & Dining' | 'Utilities' | 'Entertainment' | 'Transport' | 'Shopping' | 'Other';
+// --- Types & Constants (Translated Categories) ---
+type Category = "jedzenie_i_napoje" | "transport" | "zakupy_i_odziez" | "zdrowie_i_uroda" | "rachunki_i_abonamenty" |
+    "rozrywka" | "edukacja" | "mieszkanie" | "finanse_i_ubezpieczenia" | "inne";
 
 interface Transaction {
     id: string;
@@ -12,13 +13,35 @@ interface Transaction {
     category: Category;
 }
 
+const CATEGORIES = [
+    "jedzenie_i_napoje",
+    "transport",
+    "zakupy_i_odziez",
+    "zdrowie_i_uroda",
+    "rachunki_i_abonamenty",
+    "rozrywka",
+    "edukacja",
+    "mieszkanie",
+    "finanse_i_ubezpieczenia",
+    "inne"
+]
+
+function getLabel(cat: string) {
+    const s1 = cat.replaceAll("_", " ");
+    return s1.charAt(0).toUpperCase() + s1.slice(1);
+}
+
 const CATEGORY_COLORS: Record<Category, string> = {
-    'Food & Dining': '#f59e0b',
-    'Utilities': '#3b82f6',
-    'Entertainment': '#8b5cf6',
-    'Transport': '#10b981',
-    'Shopping': '#ec4899',
-    'Other': '#6b7280',
+    "jedzenie_i_napoje": '#f59e0b',    // Amber
+    "transport": '#3b82f6',    // Blue
+    "zakupy_i_odziez": '#8b5cf6',    // Purple
+    "zdrowie_i_uroda": '#10b981',   // Emerald
+    "rachunki_i_abonamenty": '#ec4899',      // Pink
+    "rozrywka": '#',
+    "edukacja": '#',
+    "mieszkanie": '#',
+    "finanse_i_ubezpieczenia": '#',
+    "inne": '#6b7280',        // Gray
 };
 
 export default function App() {
@@ -26,32 +49,33 @@ export default function App() {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [transactions, setTransactions] = useState<Transaction[]>([
-        { id: '1', date: '2026-06-05', rawText: 'Uber Trip 12.50 USD', amount: 12.50, category: 'Transport' },
-        { id: '2', date: '2026-06-06', rawText: 'Starbucks coffee $6.20', amount: 6.20, category: 'Food & Dining' },
-        { id: '3', date: '2026-06-07', rawText: 'Netflix subscription 15.99', amount: 15.99, category: 'Entertainment' },
-        { id: '4', date: '2026-06-07', rawText: 'Target grocery run $84.30', amount: 84.30, category: 'Shopping' },
+        { id: '1', date: '2026-06-05', rawText: 'Uber Trip 12.50 PLN', amount: 12.50, category: "transport"},
+        { id: '2', date: '2026-06-06', rawText: 'Starbucks kawa 24.50 PLN', amount: 24.50, category: "jedzenie_i_napoje"},
+        { id: '3', date: '2026-06-07', rawText: 'Netflix subskrypcja 43.00', amount: 43.00, category: "rachunki_i_abonamenty" },
+        { id: '4', date: '2026-06-07', rawText: 'Biedronka zakupy 124.30', amount: 124.30, category: "jedzenie_i_napoje" },
     ]);
 
-    // --- Mock Transformers.js Parsing Pipeline ---
+    // --- Mock Transformers.js Parsing Pipeline (with Polish keyword matching) ---
     const parseNotificationWithAI = async (text: string): Promise<{ amount: number; category: Category }> => {
         return new Promise((resolve) => {
             setTimeout(() => {
+                // Simple regex fallback to extract currency values
                 const amountMatch = text.match(/\d+(?:\.\d{2})?/);
                 const extractedAmount = amountMatch ? parseFloat(amountMatch[0]) : 0;
 
                 const lowerText = text.toLowerCase();
-                let detectedCategory: Category = 'Other';
+                let detectedCategory: Category = 'Inne';
 
-                if (lowerText.includes('food') || lowerText.includes('restaurant') || lowerText.includes('starbucks') || lowerText.includes('eat')) {
-                    detectedCategory = 'Food & Dining';
-                } else if (lowerText.includes('electric') || lowerText.includes('water') || lowerText.includes('bill') || lowerText.includes('phone')) {
-                    detectedCategory = 'Utilities';
-                } else if (lowerText.includes('netflix') || lowerText.includes('movie') || lowerText.includes('spotify') || lowerText.includes('game')) {
-                    detectedCategory = 'Entertainment';
-                } else if (lowerText.includes('uber') || lowerText.includes('lyft') || lowerText.includes('gas') || lowerText.includes('train')) {
+                if (lowerText.includes('food') || lowerText.includes('jedzenie') || lowerText.includes('restauracja') || lowerText.includes('starbucks') || lowerText.includes('kawa') || lowerText.includes('smak')) {
+                    detectedCategory = 'Jedzenie';
+                } else if (lowerText.includes('prąd') || lowerText.includes('woda') || lowerText.includes('rachunek') || lowerText.includes('telefon') || lowerText.includes('bill')) {
+                    detectedCategory = 'Rachunki';
+                } else if (lowerText.includes('netflix') || lowerText.includes('kino') || lowerText.includes('spotify') || lowerText.includes('gra')) {
+                    detectedCategory = 'Rozrywka';
+                } else if (lowerText.includes('uber') || lowerText.includes('bolt') || lowerText.includes('paliwo') || lowerText.includes('pociąg') || lowerText.includes('taxi')) {
                     detectedCategory = 'Transport';
-                } else if (lowerText.includes('amazon') || lowerText.includes('target') || lowerText.includes('store') || lowerText.includes('shop')) {
-                    detectedCategory = 'Shopping';
+                } else if (lowerText.includes('amazon') || lowerText.includes('allegro') || lowerText.includes('sklep') || lowerText.includes('zakupy') || lowerText.includes('biedronka')) {
+                    detectedCategory = 'Zakupy';
                 }
 
                 resolve({ amount: extractedAmount, category: detectedCategory });
@@ -79,7 +103,7 @@ export default function App() {
             setTransactions(prev => [newTransaction, ...prev]);
             setInputText('');
         } catch (error) {
-            console.error("AI execution failed", error);
+            console.error("Przetwarzanie AI nie powiodło się", error);
         } finally {
             setIsLoading(false);
         }
@@ -87,14 +111,7 @@ export default function App() {
 
     // --- Data Computation Matrix ---
     const totalsByCategory = useMemo(() => {
-        const totals: Record<Category, number> = {
-            'Food & Dining': 0,
-            'Utilities': 0,
-            'Entertainment': 0,
-            'Transport': 0,
-            'Shopping': 0,
-            'Other': 0,
-        };
+        const totals: Record<Category, number> = Object.fromEntries(CATEGORIES.map(cat => [cat, 0])) as Record<Category, number>;
         transactions.forEach(t => { totals[t.category] += t.amount; });
         return totals;
     }, [transactions]);
@@ -114,16 +131,8 @@ export default function App() {
             <header className="app-header">
                 <div className="header-content">
                     <div className="logo-section">
-                        {/*<div className="logo-box">*/}
-                        {/*    <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">*/}
-                        {/*        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />*/}
-                        {/*    </svg>*/}
-                        {/*</div>*/}
-                        <h1 className="logo-title">AI Expense Tracker</h1>
+                        <h1 className="logo-title">Aplikacja do śledzenia wydatków z AI</h1>
                     </div>
-                    {/*<div className="total-badge">*/}
-                    {/*    Total Logged: ${totalSpent.toFixed(2)}*/}
-                    {/*</div>*/}
                 </div>
             </header>
 
@@ -137,30 +146,30 @@ export default function App() {
                             <svg className="card-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            Parse Notification Text
+                            Przeanalizuj powiadomienie bankowe
                         </h2>
                         <form onSubmit={handleProcessText}>
-                        <textarea
-                          className="input-textarea"
-                          placeholder="Paste transaction text here... e.g., 'Bank Alert: Spent $54.20 at Amazon'"
-                          value={inputText}
-                          onChange={(e) => setInputText(e.target.value)}
-                          disabled={isLoading}
-                        />
+              <textarea
+                  className="input-textarea"
+                  placeholder="Wklej treść powiadomienia... np. 'Płatność kartą w Biedronka na kwotę 45.20 PLN'"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  disabled={isLoading}
+              />
                             <button type="submit" disabled={isLoading || !inputText.trim()} className="submit-button">
-                                {isLoading ? 'Processing Local AI Engine...' : 'Process & Classify'}
+                                {isLoading ? 'Przetwarzanie przez lokalny silnik AI...' : 'Przetwórz i sklasyfikuj'}
                             </button>
                         </form>
                     </div>
 
                     <div className="ui-card">
-                        <h3 className="status-header">Model Pipeline Status</h3>
+                        <h3 className="status-header">Status potoku modeli</h3>
                         <div className="status-indicator">
                             <span className="pulse-dot"></span>
-                            Transformers.js Engine Ready
+                            Silnik Transformers.js gotowy
                         </div>
                         <p className="status-description">
-                            Zero-Shot NLP Classifiers and RegEx pattern parsers are running locally inside your browser process context.
+                            Klasyfikatory NLP typu Zero-Shot oraz parser RegEx działają całkowicie lokalnie w kontekście Twojej przeglądarki.
                         </p>
                     </div>
                 </div>
@@ -169,19 +178,19 @@ export default function App() {
                 <div>
 
                     {/* Custom Pure-CSS Scaled Graph Framework */}
-                    <div className="ui-card">
-                        <h2 className="card-title">
+                    <div className="ui-card ui-card-graph">
+                        <h2 className="card-title card-title-graph">
                             <svg className="card-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
-                            Expenses Breakdown
+                            Podział wydatków według kategorii
                         </h2>
 
                         <div className="chart-container">
                             {Object.entries(totalsByCategory).map(([cat, amount]) => {
                                 const heightPct = (amount / maxCategoryValue) * 100;
                                 return (
-                                    <div key={cat} className="chart-bar-wrapper" title={`${cat}: $${amount.toFixed(2)}`}>
+                                    <div key={cat} className="chart-bar-wrapper" title={`${cat}: ${amount.toFixed(2)} PLN`}>
                                         <div
                                             className="chart-bar"
                                             style={{
@@ -197,7 +206,7 @@ export default function App() {
                         <div className="chart-labels-wrapper">
                             {Object.keys(totalsByCategory).map((cat) => (
                                 <div key={cat} className="chart-label">
-                                    {cat.split(' ')[0]}
+                                    {getLabel(cat)}
                                 </div>
                             ))}
                         </div>
@@ -210,7 +219,7 @@ export default function App() {
                                 <svg className="card-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                 </svg>
-                                Parsed Ledger
+                                Zarejestrowane transakcje
                             </h2>
                         </div>
 
@@ -218,17 +227,17 @@ export default function App() {
                             <table className="ledger-table">
                                 <thead>
                                 <tr>
-                                    <th className="ledger-th">Date</th>
-                                    <th className="ledger-th">Notification Context</th>
-                                    <th className="ledger-th">Assigned Category</th>
-                                    <th className="ledger-th" style={{ textAlign: 'right' }}>Amount</th>
+                                    <th className="ledger-th">Data</th>
+                                    <th className="ledger-th">Treść powiadomienia</th>
+                                    <th className="ledger-th">Przypisana kategoria</th>
+                                    <th className="ledger-th" style={{ textAlign: 'right' }}>Kwota</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {transactions.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="ledger-td" style={{ textAlign: 'center', color: '#9ca3af' }}>
-                                            No transactions logged yet.
+                                            Brak zarejestrowanych transakcji.
                                         </td>
                                     </tr>
                                 ) : (
@@ -247,11 +256,11 @@ export default function App() {
                               }}
                           >
                             <span className="tag-dot" style={{ backgroundColor: CATEGORY_COLORS[t.category] }} />
-                              {t.category}
+                              {getLabel(t.category)}
                           </span>
                                             </td>
                                             <td className="ledger-td td-amount">
-                                                ${t.amount.toFixed(2)}
+                                                {t.amount.toFixed(2)} PLN
                                             </td>
                                         </tr>
                                     ))
