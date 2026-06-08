@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useEffect} from 'react';
+import React, {useState, useMemo, useEffect, type SubmitEvent} from 'react';
 import './App.css';
 
 // --- Types & Constants (Translated Categories) ---
@@ -85,7 +85,7 @@ export default function App() {
     }, [modelStatus])
 
 
-    const handleProcessText = async (e: FormDataEvent) => {
+    const handleProcessText = async (e: SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (!inputText.trim() || isLoading || !workerRef.current) return;
 
@@ -193,7 +193,7 @@ export default function App() {
                             </svg>
                             Przeanalizuj powiadomienie bankowe
                         </h2>
-                        <form onSubmit={handleProcessText}>
+                        <form onSubmit={(e) => handleProcessText(e)}>
               <textarea
                   className="input-textarea"
                   placeholder="Wklej treść powiadomienia... np. 'Płatność kartą w Biedronka na kwotę 45.20 PLN'"

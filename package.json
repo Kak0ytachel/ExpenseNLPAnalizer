@@ -3,14 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://Kak0ytachel.github.io/ExpenseNLPAnalizer/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
+    "gh-pages": "^6.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },

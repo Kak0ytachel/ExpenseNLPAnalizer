@@ -1,4 +1,4 @@
-import { pipeline, env } from '@huggingface/transformers';
+import { pipeline } from '@huggingface/transformers';
 
 
 // env.allowLocalModels = false;
