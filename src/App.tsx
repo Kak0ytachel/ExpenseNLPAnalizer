@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo, useEffect} from 'react';
 import './App.css';
 
 // --- Types & Constants (Translated Categories) ---
@@ -37,10 +37,10 @@ const CATEGORY_COLORS: Record<Category, string> = {
     "zakupy_i_odziez": '#8b5cf6',    // Purple
     "zdrowie_i_uroda": '#10b981',   // Emerald
     "rachunki_i_abonamenty": '#ec4899',      // Pink
-    "rozrywka": '#',
-    "edukacja": '#',
-    "mieszkanie": '#',
-    "finanse_i_ubezpieczenia": '#',
+    "rozrywka": '#c7fa0e',
+    "edukacja": '#f5d60b',
+    "mieszkanie": '#f43f5e',
+    "finanse_i_ubezpieczenia": '#0cddc5',
     "inne": '#6b7280',        // Gray
 };
 
@@ -55,59 +55,104 @@ export default function App() {
         { id: '4', date: '2026-06-07', rawText: 'Biedronka zakupy 124.30', amount: 124.30, category: "jedzenie_i_napoje" },
     ]);
 
-    // --- Mock Transformers.js Parsing Pipeline (with Polish keyword matching) ---
-    const parseNotificationWithAI = async (text: string): Promise<{ amount: number; category: Category }> => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simple regex fallback to extract currency values
-                const amountMatch = text.match(/\d+(?:\.\d{2})?/);
-                const extractedAmount = amountMatch ? parseFloat(amountMatch[0]) : 0;
+    const workerRef = React.useRef<Worker | null>(null);
+    const [modelStatus, setModelStatus] = useState('Inicjalizacja...');
+    const [modelColor, setModelColor] = useState('dot-gray');
 
-                const lowerText = text.toLowerCase();
-                let detectedCategory: Category = 'Inne';
+    React.useEffect(() => {
+        // Tworzenie instancji workera (składnia wspierana przez Vite / Webpack 5)
+        workerRef.current = new Worker(
+            new URL('./worker.ts', import.meta.url),
+            { type: 'module' }
+        );
 
-                if (lowerText.includes('food') || lowerText.includes('jedzenie') || lowerText.includes('restauracja') || lowerText.includes('starbucks') || lowerText.includes('kawa') || lowerText.includes('smak')) {
-                    detectedCategory = 'Jedzenie';
-                } else if (lowerText.includes('prąd') || lowerText.includes('woda') || lowerText.includes('rachunek') || lowerText.includes('telefon') || lowerText.includes('bill')) {
-                    detectedCategory = 'Rachunki';
-                } else if (lowerText.includes('netflix') || lowerText.includes('kino') || lowerText.includes('spotify') || lowerText.includes('gra')) {
-                    detectedCategory = 'Rozrywka';
-                } else if (lowerText.includes('uber') || lowerText.includes('bolt') || lowerText.includes('paliwo') || lowerText.includes('pociąg') || lowerText.includes('taxi')) {
-                    detectedCategory = 'Transport';
-                } else if (lowerText.includes('amazon') || lowerText.includes('allegro') || lowerText.includes('sklep') || lowerText.includes('zakupy') || lowerText.includes('biedronka')) {
-                    detectedCategory = 'Zakupy';
-                }
+        workerRef.current.onmessage = (event) => {
+            console.log("Worker Message:", event.data);
+            // const { status, message } = event.data;
+            // if (status === 'loading' || status === 'ready') {
+            //     setModelStatus(message);
+            // }
+        };
 
-                resolve({ amount: extractedAmount, category: detectedCategory });
-            }, 1200);
-        });
-    };
+        return () => {
+            console.log("Worker Terminating...");
+            workerRef.current?.terminate();
+        };
+    }, []);
 
-    // --- Form Handler Action ---
-    const handleProcessText = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!inputText.trim() || isLoading) return;
+    useEffect(() => {
+        console.log("Model Status:", modelStatus);
+    }, [modelStatus])
+
+
+    const handleProcessText = async (e: FormDataEvent) => {
+        e.preventDefault()
+        if (!inputText.trim() || isLoading || !workerRef.current) return;
 
         setIsLoading(true);
-        try {
-            const parsedResult = await parseNotificationWithAI(inputText);
 
-            const newTransaction: Transaction = {
-                id: crypto.randomUUID(),
-                date: new Date().toISOString().split('T')[0],
-                rawText: inputText,
-                amount: parsedResult.amount,
-                category: parsedResult.category
-            };
+        // Wysyłamy żądanie do Workera
+        workerRef.current.postMessage({ text: inputText });
 
-            setTransactions(prev => [newTransaction, ...prev]);
-            setInputText('');
-        } catch (error) {
-            console.error("Przetwarzanie AI nie powiodło się", error);
-        } finally {
-            setIsLoading(false);
-        }
+        // Odbieramy jednorazowy wynik dla tej konkretnej operacji
+        workerRef.current.onmessage = (event) => {
+            const { status, result, message } = event.data;
+            console.log("Worker Message:", event.data);
+
+            if (status === 'success') {
+                const newTransaction = {
+                    id: crypto.randomUUID(),
+                    date: new Date().toISOString().split('T')[0],
+                    rawText: inputText,
+                    amount: result.amount,
+                    category: result.category
+                };
+                setTransactions(prev => [newTransaction, ...prev]);
+                setInputText('');
+                setIsLoading(false);
+            } else if (status === 'error') {
+                setModelStatus(message)
+                setModelColor('dot-red')
+                alert(message);
+                // setIsLoading(false);
+            } else if (status === 'loading') {
+                setModelStatus(message);
+                setModelColor('dot-yellow')
+            } else {
+                // Aktualizacja globalnego paska statusu ładowania w tle
+                setModelStatus(message);
+                setModelColor('dot-green')
+            }
+        };
     };
+
+    // // --- Mock Transformers.js Parsing Pipeline (with Polish keyword matching) ---
+    //
+    // // --- Form Handler Action ---
+    // const handleProcessText = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     if (!inputText.trim() || isLoading) return;
+    //
+    //     setIsLoading(true);
+    //     try {
+    //         const parsedResult = await parseNotificationWithAI(inputText);
+    //
+    //         const newTransaction: Transaction = {
+    //             id: crypto.randomUUID(),
+    //             date: new Date().toISOString().split('T')[0],
+    //             rawText: inputText,
+    //             amount: parsedResult.amount,
+    //             category: parsedResult.category
+    //         };
+    //
+    //         setTransactions(prev => [newTransaction, ...prev]);
+    //         setInputText('');
+    //     } catch (error) {
+    //         console.error("Przetwarzanie AI nie powiodło się", error);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
 
     // --- Data Computation Matrix ---
     const totalsByCategory = useMemo(() => {
@@ -116,9 +161,9 @@ export default function App() {
         return totals;
     }, [transactions]);
 
-    const totalSpent = useMemo(() => {
-        return Object.values(totalsByCategory).reduce((sum, amt) => sum + amt, 0);
-    }, [totalsByCategory]);
+    // const totalSpent = useMemo(() => {
+    //     return Object.values(totalsByCategory).reduce((sum, amt) => sum + amt, 0);
+    // }, [totalsByCategory]);
 
     const maxCategoryValue = useMemo(() => {
         const max = Math.max(...Object.values(totalsByCategory));
@@ -165,8 +210,8 @@ export default function App() {
                     <div className="ui-card">
                         <h3 className="status-header">Status potoku modeli</h3>
                         <div className="status-indicator">
-                            <span className="pulse-dot"></span>
-                            Silnik Transformers.js gotowy
+                            <span className={"pulse-dot " + modelColor}></span>
+                            <span className={modelColor} style={{backgroundColor: "transparent"}}>{modelStatus}</span>
                         </div>
                         <p className="status-description">
                             Klasyfikatory NLP typu Zero-Shot oraz parser RegEx działają całkowicie lokalnie w kontekście Twojej przeglądarki.
