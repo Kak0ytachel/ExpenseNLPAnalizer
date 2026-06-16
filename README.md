@@ -1,73 +1,12 @@
-# React + TypeScript + Vite
+# Expense NLP Analizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> This project was made as an assignment at a short (month-long) course of Natural Language Processing (NLP)
 
-Currently, two official plugins are available:
+A simple frontend application made with React, Vite and Transformers.js that downloads a custom pre-trained model from HuggingFace and uses it to determine expence's category based on its bank message.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The model was trained based on `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli` (multilingual zero-shot classification) and pre-trained on about 300 bank transaction records in polish using a 5-fold cross-validation method. 
+The resulting model was transformed to an ONNX one and quantified (1 gb shrunk to 300 mb) using `optimum-cli`. It is available at [HuggingFace](https://huggingface.co/chel0d/xlm-roberta-expences-categories-pl). 
 
-## React Compiler
+**Warning**: the custom pre-trained model was made for polish language and generally ~sucks~ _works poorly_. It could not be a production solution, only a tech demo. 
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+<img width="1878" height="1218" alt="Image" src="https://github.com/user-attachments/assets/9dcd5c6b-db32-41d1-93b2-5da158febf33" />
