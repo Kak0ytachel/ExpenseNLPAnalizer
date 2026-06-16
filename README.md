@@ -9,4 +9,7 @@ The resulting model was transformed to an ONNX one and quantified (1 gb shrunk t
 
 **Warning**: the custom pre-trained model was made for polish language and generally ~sucks~ _works poorly_. It could not be a production solution, only a tech demo. 
 
+The app is currenly available at https://kak0ytachel.github.io/ExpenseNLPAnalizer/ . Note that it downloads a 300 mb model package at the first input, so it may take some time to process.
+
 <img width="1878" height="1218" alt="Image" src="https://github.com/user-attachments/assets/9dcd5c6b-db32-41d1-93b2-5da158febf33" />
+
